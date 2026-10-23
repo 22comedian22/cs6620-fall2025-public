@@ -1,4 +1,4 @@
-# Version: 1.0.2
+# Version: 2.0 - Automated Deployment
 # Built with GitHub Actions
 import os
 import re
@@ -8,9 +8,15 @@ from flask import Flask, render_template, request, jsonify, send_from_directory,
 from flask_cors import CORS
 from pydub import AudioSegment
 import tempfile
+from datetime import datetime
 
 app = Flask(__name__)
 CORS(app)
+APP_VERSION = os.environ.get("APP_VERSION", "1.0.2-manual")
+DEPLOY_METHOD = os.environ.get("DEPLOY_METHOD", "Manual (SSH)")
+DEPLOY_TIME = os.environ.get("DEPLOY_TIME", "unknown")
+print(f"Version: {APP_VERSION} | Deployment method: {DEPLOY_METHOD} | "
+      f"Deployed at: {DEPLOY_TIME}", flush=True)
 
 # Global variables for playlist management
 current_directory = None
@@ -146,7 +152,22 @@ def index():
     """
     Renders the main HTML page for the client-side audio player.
     """
-    return render_template('index.html') 
+    return render_template(
+        'index.html',
+        app_version=APP_VERSION,
+        deploy_method=DEPLOY_METHOD,
+        deploy_time=DEPLOY_TIME,
+    )
+
+@app.route('/health')
+def health():
+    return jsonify({
+        "status": "healthy",
+        "version": APP_VERSION,
+        "deployment_method": DEPLOY_METHOD,
+        "deployed_at": DEPLOY_TIME,
+        "timestamp": datetime.now().isoformat()
+    })
 
 @app.route('/select_directory', methods=['POST'])
 def select_directory():
